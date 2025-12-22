@@ -157,41 +157,41 @@ class Program {
             {
                 engine.Initialize(model, config);
                 byte[] outRgba;
-            if (!string.IsNullOrEmpty(bgColor))
-            {
-                var parts = bgColor.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 3 &&
-                    byte.TryParse(parts[0], out byte r) &&
-                    byte.TryParse(parts[1], out byte g) &&
-                    byte.TryParse(parts[2], out byte b))
+                if (!string.IsNullOrEmpty(bgColor))
                 {
-                    outRgba = engine.ChangeBackColor(input, r, g, b);
-                    Console.WriteLine($"Using background color: {r},{g},{b}");
+                    var parts = bgColor.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length == 3 &&
+                        byte.TryParse(parts[0], out byte r) &&
+                        byte.TryParse(parts[1], out byte g) &&
+                        byte.TryParse(parts[2], out byte b))
+                    {
+                        outRgba = engine.ChangeBackColor(input, r, g, b);
+                        Console.WriteLine($"Using background color: {r},{g},{b}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid --bg-color format. Use r,g,b (e.g., 255,255,255)");
+                        return 6;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(bgImage))
+                {
+                    if (File.Exists(bgImage))
+                    {
+                        outRgba = engine.ChangeBackImage(input, bgImage);
+                        Console.WriteLine($"Using background image: {bgImage}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Error: Background image not found: {bgImage}");
+                        return 7;
+                    }
                 }
                 else
                 {
-                    Console.WriteLine("Invalid --bg-color format. Use r,g,b (e.g., 255,255,255)");
-                    return 6;
+                    Console.WriteLine("Warning: No background specified. Using default background.");
+                    outRgba = engine.ChangeBackColor(input, 0, 0, 0);
                 }
-            }
-            else if (!string.IsNullOrEmpty(bgImage))
-            {
-                if (File.Exists(bgImage))
-                {
-                    outRgba = engine.ChangeBackImage(input, bgImage);
-                    Console.WriteLine($"Using background image: {bgImage}");
-                }
-                else
-                {
-                    Console.WriteLine($"Error: Background image not found: {bgImage}");
-                    return 7;
-                }
-            }
-            else
-            {
-                Console.WriteLine("Warning: No background specified. Using default background.");
-                outRgba = engine.ChangeBackColor(input, 0, 0, 0);
-            }
 
                 engine.LoadRgba(input, out int width, out int height);
                 engine.SaveRgba(output, outRgba, width, height);

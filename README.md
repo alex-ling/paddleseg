@@ -90,7 +90,7 @@ When using the .NET `PaddleEngine` via JSON config, the equivalent keys are:
 
 ## Preprocessing Notes
 
-The default pipeline converts RGBA→BGR and normalizes to [0,1]. Many PaddleSeg models require resize and mean/std normalization. Adjust `rgba_to_bgr_float` and input reshape in [src/paddleseg_api.cpp](src/paddleseg_api.cpp) to match your export.
+The default pipeline converts RGBA→BGR and normalizes to [0,1]. Many PaddleSeg models require resize and mean/std normalization. Adjust `rgba_to_bgr_float` and input reshape in [nativesrc/src/paddleseg_api.cpp](src/paddleseg_api.cpp) to match your export.
 
 ## GPU/CPU
 
