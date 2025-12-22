@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PaddleSeg": {
+      "commandName": "Project",
+      "commandLineArgs": "mask --model \"D:\\ace\\aceai\\inference\\modnet-mobilenetv2\" --input \"in.jpg\" --output \"out.png\""
+    }
+  }
+}

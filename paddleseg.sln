@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11312.151
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B36A84DF-456D-A817-6EDD-3EC3E7F6E11F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acesoft.PaddleSeg", "src\Acesoft.PaddleSeg\Acesoft.PaddleSeg.csproj", "{6BB3DD59-87C6-64A5-50A2-05951241B62C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acesoft.PaddleSegCli", "src\Acesoft.PaddleSegCli\Acesoft.PaddleSegCli.csproj", "{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6BB3DD59-87C6-64A5-50A2-05951241B62C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BB3DD59-87C6-64A5-50A2-05951241B62C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BB3DD59-87C6-64A5-50A2-05951241B62C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BB3DD59-87C6-64A5-50A2-05951241B62C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6BB3DD59-87C6-64A5-50A2-05951241B62C} = {B36A84DF-456D-A817-6EDD-3EC3E7F6E11F}
+		{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9} = {B36A84DF-456D-A817-6EDD-3EC3E7F6E11F}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9F3F2262-EB21-4556-84C3-89740D867DC6}
+	EndGlobalSection
+EndGlobal
