@@ -14,4 +14,11 @@
   <ItemGroup>
     <ProjectReference Include="..\Acesoft.PaddleSeg\Acesoft.PaddleSeg.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- include sample input image in publish output -->
+    <Content Include="in.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

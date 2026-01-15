@@ -28,6 +28,41 @@ Example publish (Windows x64):
 dotnet publish src/Acesoft.PaddleSegCli/Acesoft.PaddleSegCli.csproj -c Release -r win-x64 -o publish/win-x64 --self-contained false
 ```
 
+## Build native library (CMake)
+
+The native interop library is in the `nativesrc` folder and must be built separately. The library no longer toggles GPU at compile-time; GPU vs CPU is chosen at runtime via the engine init parameters.
+
+Windows (Visual Studio / MSVC):
+
+```powershell
+# Open "x64 Native Tools Command Prompt for VS" (or use an x64 developer PowerShell)
+Import-Module "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+Enter-VsDevShell f92f0502
+cmake -S nativesrc -B build_native -D PADDLE_DIR="D:/paddle/inference/paddle" -D OpenCV_DIR="D:/opencv/build" -A x64
+cmake --build build_native --config Release
+
+# After build, copy the produced PaddleSegInterence.dll to the published .NET folder:
+copy build_native\Release\PaddleSegInterence.dll publish\win-x64\
+```
+
+Linux (GCC/Clang):
+
+```bash
+cmake -S nativesrc -B build_native -D PADDLE_DIR=/opt/paddle/inference -D OpenCV_DIR=/usr/local/opencv -DCMAKE_BUILD_TYPE=Release
+cmake --build build_native --config Release -j$(nproc)
+
+# Copy the shared object to the publish folder or add its directory to LD_LIBRARY_PATH
+cp build_native/libPaddleSegInterence.so publish/linux-x64/
+```
+
+Notes:
+
+- Set `PADDLE_DIR` to your Paddle Inference SDK root (the folder that contains `include/` and `lib/`).
+- Set `OpenCV_DIR` to your OpenCV build folder.
+- If you use non-standard locations for CUDA/CUDNN/TensorRT, ensure those are discoverable by the linker and available at runtime.
+- The produced library names are `PaddleSegInterence.dll` (Windows) and `libPaddleSegInterence.so` (Linux). Place the appropriate binary next to the published `PaddleSegCli.exe` (or add its folder to `PATH` / `LD_LIBRARY_PATH`).
+
+
 ## Command-line Usage
 
 After publishing, the CLI is available in `publish/win-x64` (Windows) or the corresponding publish folder for your runtime. The executable name is `PaddleSegCli.exe`.

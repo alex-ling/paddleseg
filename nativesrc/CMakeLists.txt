@@ -8,9 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Compile-time macro PADDLE_USE_GPU is no longer required and removed.
 
 # User must set PADDLE_INFERENCE_DIR to point to Paddle Inference C++ SDK
-set(PADDLE_DIR "D:/paddle/inference/paddle")
-
-set(OpenCV_DIR "D:/opencv/build")
+#set(PADDLE_DIR "D:/paddle/inference/paddle")
+#set(OpenCV_DIR "D:/opencv/build")
 set(OpenCV_FOUND TRUE)
 
 #find_package(OpenCV REQUIRED)

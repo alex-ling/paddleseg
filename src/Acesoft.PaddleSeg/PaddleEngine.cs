@@ -15,7 +15,7 @@ public abstract class PaddleEngine
         bool enableUseGpu = false; // default false
         int cpuThreadNum = 20;
         int gpuMemSize = 100;
-        bool enableOneDnn = true; // default true per new policy
+        bool enableOneDnn = false; // default false: disable oneDNN optimizations by default
         bool enableOnnxRuntime = false;
 
         if (modelConfig != null)

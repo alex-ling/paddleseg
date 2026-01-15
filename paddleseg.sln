@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acesoft.PaddleSeg", "src\Ac
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acesoft.PaddleSegCli", "src\Acesoft.PaddleSegCli\Acesoft.PaddleSegCli.csproj", "{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaddleSegWin", "src\PaddleSegWin\PaddleSegWin.csproj", "{F79A4689-15B9-4571-9340-8E1DF0F15B4F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,6 +24,10 @@ Global
 		{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F79A4689-15B9-4571-9340-8E1DF0F15B4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F79A4689-15B9-4571-9340-8E1DF0F15B4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F79A4689-15B9-4571-9340-8E1DF0F15B4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F79A4689-15B9-4571-9340-8E1DF0F15B4F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -29,6 +35,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{6BB3DD59-87C6-64A5-50A2-05951241B62C} = {B36A84DF-456D-A817-6EDD-3EC3E7F6E11F}
 		{4638C1F0-27AA-2096-EF0E-ACC0DACB03F9} = {B36A84DF-456D-A817-6EDD-3EC3E7F6E11F}
+		{F79A4689-15B9-4571-9340-8E1DF0F15B4F} = {B36A84DF-456D-A817-6EDD-3EC3E7F6E11F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9F3F2262-EB21-4556-84C3-89740D867DC6}

@@ -6,15 +6,21 @@ Adjust the variables below if your SDK / OpenCV paths differ.
 #>
 
 param(
-  [string]$PublishDir = "D:\ace\aceai\paddle\publish\win-x64",
+  [string]$PublishDir = "",
   [string]$PaddleLibDir = "D:\paddle\inference\paddle\lib",
   [string]$OpenCvBinDir = "D:\opencv\build\x64\vc16\bin",
+  [string]$NativeBuildReleaseDir = "",
+  [switch]$CopyNativeInterop,
   [switch]$VerboseCopy
 )
+
+if (-not $PublishDir) { $PublishDir = Join-Path $PSScriptRoot "publish\win-x64" }
+if (-not $NativeBuildReleaseDir) { $NativeBuildReleaseDir = Join-Path $PSScriptRoot "build_native\Release" }
 
 Write-Host "PublishDir: $PublishDir"
 Write-Host "PaddleLibDir: $PaddleLibDir"
 Write-Host "OpenCvBinDir: $OpenCvBinDir"
+Write-Host "NativeBuildReleaseDir: $NativeBuildReleaseDir"
 
 # Derive third-party dirs relative to PaddleLibDir (two levels up)
 try {
@@ -50,7 +56,7 @@ foreach ($dll in $preferred) {
   elseif (Test-Path $p2) { $found = $p2 }
 
   if ($found) {
-    Copy-Item -Path $found -Destination $PublishDir -Force
+    Copy-Item -Path $found -Destination $PublishDir -Force -ErrorAction SilentlyContinue
     if ($VerboseCopy) { Write-Host "Copied $found -> $PublishDir" }
   } else {
     Write-Warning "$dll not found in PaddleLibDir or OpenCvBinDir"
@@ -60,7 +66,7 @@ foreach ($dll in $preferred) {
 # Copy all DLLs from Paddle lib and OpenCV bin (non-recursive)
 if (Test-Path $PaddleLibDir) {
   Get-ChildItem -Path $PaddleLibDir -Filter *.dll -File -ErrorAction SilentlyContinue | ForEach-Object {
-    Copy-Item -Path $_.FullName -Destination $PublishDir -Force
+    Copy-Item -Path $_.FullName -Destination $PublishDir -Force -ErrorAction SilentlyContinue
     if ($VerboseCopy) { Write-Host "Copied $_.FullName -> $PublishDir" }
   }
 } else {
@@ -79,7 +85,7 @@ if (Test-Path $PaddleThirdPartyMkl) {
 
 if (Test-Path $PaddleThirdPartyOneDNN) {
   Get-ChildItem -Path $PaddleThirdPartyOneDNN -Filter *.dll -File -ErrorAction SilentlyContinue | ForEach-Object {
-    Copy-Item -Path $_.FullName -Destination $PublishDir -Force
+    Copy-Item -Path $_.FullName -Destination $PublishDir -Force -ErrorAction SilentlyContinue
     if ($VerboseCopy) { Write-Host "Copied $_.FullName -> $PublishDir" }
   }
 } else {
@@ -88,11 +94,23 @@ if (Test-Path $PaddleThirdPartyOneDNN) {
 
 if (Test-Path $OpenCvBinDir) {
   Get-ChildItem -Path $OpenCvBinDir -Filter *.dll -File -ErrorAction SilentlyContinue | ForEach-Object {
-    Copy-Item -Path $_.FullName -Destination $PublishDir -Force
+    Copy-Item -Path $_.FullName -Destination $PublishDir -Force -ErrorAction SilentlyContinue
     if ($VerboseCopy) { Write-Host "Copied $_.FullName -> $PublishDir" }
   }
 } else {
   Write-Warning "OpenCvBinDir not found: $OpenCvBinDir"
+}
+
+# Optionally copy the native interop DLL produced by the native build
+if ($CopyNativeInterop) {
+  $interopName = "PaddleSegInterence.dll"
+  $interopPath = Join-Path $NativeBuildReleaseDir $interopName
+  if (Test-Path $interopPath) {
+    Copy-Item -Path $interopPath -Destination $PublishDir -Force -ErrorAction SilentlyContinue
+    Write-Host "Copied native interop $interopPath -> $PublishDir"
+  } else {
+    Write-Warning "Native interop not found at $interopPath"
+  }
 }
 
 Write-Host "DLL copy finished. Verify the publish folder now contains Paddle/OpenCV runtime DLLs."

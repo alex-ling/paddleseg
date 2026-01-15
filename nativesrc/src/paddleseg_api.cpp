@@ -100,8 +100,8 @@ int seg_init(const char* model_dir, int enable_use_gpu, int gpu_mem_size, int cp
             config.DisableGpu();
         }
 
+        // set math library threads (applies to CPU/backends)
         if (cpu_thread_num > 0) {
-            // set math library threads (applies to CPU/backends)
             try {
                 config.SetCpuMathLibraryNumThreads(cpu_thread_num);
             } catch (...) {
@@ -109,16 +109,20 @@ int seg_init(const char* model_dir, int enable_use_gpu, int gpu_mem_size, int cp
             }
         }
 
-        if (enable_onednn) {
-            // enable oneDNN (may be named EnableoneDNN in some builds)
-            try { config.EnableoneDNN(); } catch (...) { try { config.EnableOneDNN(); } catch (...) {} }
+        if (enable_use_gpu) {
+            // When using GPU, enable IR optimizations and memory optimizations
+            // to improve inference performance on GPU backends.
+            try { config.SwitchIrOptim(true); } catch (...) {}
+            try { config.EnableMemoryOptim(); } catch (...) {}
+        } else {
+            // CPU path: enable oneDNN and ONNXRuntime only for CPU builds/runtimes
+            if (enable_onednn) {
+                try { config.EnableoneDNN(); } catch (...) { try { config.EnableOneDNN(); } catch (...) {} }
+            }
+            if (enable_onnxruntime) {
+                try { config.EnableONNXRuntime(); } catch (...) {}
+            }
         }
-
-        if (enable_onnxruntime) {
-            try { config.EnableONNXRuntime(); } catch (...) {}
-        }
-
-        config.SwitchIrOptim();
         g_predictor = CreatePredictor(config);
         if (!g_predictor) return -2;
     } catch (...) {
@@ -128,16 +132,39 @@ int seg_init(const char* model_dir, int enable_use_gpu, int gpu_mem_size, int cp
 }
 
 // simple helper: convert RGBA -> BGR float and normalize to 0..1
-static void rgba_to_bgr_float(const unsigned char* rgba, int w, int h, std::vector<float>& out) {
-    out.resize(3 * w * h);
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            int i = y * w + x;
-            const unsigned char* p = rgba + (i * 4);
-            // input RGBA -> BGR
-            out[0 * w * h + i] = p[2] / 255.f;
-            out[1 * w * h + i] = p[1] / 255.f;
-            out[2 * w * h + i] = p[0] / 255.f;
+static inline int round_up(int v, int align) {
+    return ((v + align - 1) / align) * align;
+}
+
+// Convert RGBA buffer to BGR float CHW with optional right/bottom padding to (pw,ph).
+static void rgba_to_bgr_float_padded(const unsigned char* rgba, int w, int h, int pw, int ph, std::vector<float>& out) {
+    out.resize(3 * pw * ph);
+    // create cv mats to simplify color conversion and padding
+    cv::Mat src_rgba(h, w, CV_8UC4, const_cast<unsigned char*>(rgba));
+    cv::Mat bgr;
+    cv::cvtColor(src_rgba, bgr, cv::COLOR_RGBA2BGR);
+
+    if (pw != w || ph != h) {
+        cv::Mat padded(ph, pw, bgr.type(), cv::Scalar::all(0));
+        bgr.copyTo(padded(cv::Rect(0, 0, w, h)));
+        bgr = padded;
+    }
+
+    // convert to float and normalize
+    cv::Mat bgr_f;
+    bgr.convertTo(bgr_f, CV_32F, 1.0f / 255.0f);
+
+    // fill out in CHW order
+    int area = pw * ph;
+    for (int c = 0; c < 3; ++c) {
+        float* dst = out.data() + c * area;
+        for (int y = 0; y < ph; ++y) {
+            const float* row = bgr_f.ptr<float>(y);
+            for (int x = 0; x < pw; ++x) {
+                int idx = y * pw + x;
+                // BGR channels: row has 3 floats per pixel
+                dst[idx] = row[x * 3 + c];
+            }
         }
     }
 }
@@ -149,14 +176,19 @@ int seg_infer(const unsigned char* rgba, int width, int height, unsigned char* o
     // Basic pipeline: feed input as [1,3,H,W] floats. Many PaddleSeg models require specific resize and mean/std.
     // This implementation assumes model accepts native HxW; for best results, preexport or adjust preprocessing.
 
+    // Many segmentation models require input sizes aligned to a multiple (e.g. 32).
+    const int align = 32;
+    int padded_w = round_up(width, align);
+    int padded_h = round_up(height, align);
+
     std::vector<float> input_data;
-    rgba_to_bgr_float(rgba, width, height, input_data);
+    rgba_to_bgr_float_padded(rgba, width, height, padded_w, padded_h, input_data);
 
     // Get input names and tensor
     auto input_names = g_predictor->GetInputNames();
     if (input_names.empty()) return -3;
     auto input_t = g_predictor->GetInputHandle(input_names[0]);
-    std::vector<int> shape = {1, 3, height, width};
+    std::vector<int> shape = {1, 3, padded_h, padded_w};
     input_t->Reshape(shape);
     input_t->CopyFromCpu(input_data.data());
 
@@ -177,42 +209,35 @@ int seg_infer(const unsigned char* rgba, int width, int height, unsigned char* o
 
     // Interpret output: if shape [1,1,H,W] -> use channel 0; if [1,2,H,W] -> use channel 1 as fg prob
     int C = (out_shape.size() >= 4) ? out_shape[1] : 1;
-    int H = (out_shape.size() >= 4) ? out_shape[2] : height;
-    int W = (out_shape.size() >= 4) ? out_shape[3] : width;
+    int H = (out_shape.size() >= 4) ? out_shape[2] : padded_h;
+    int W = (out_shape.size() >= 4) ? out_shape[3] : padded_w;
 
-    if (H != height || W != width) {
-        // resize probability map to requested size
-        cv::Mat prob_map;
-        if (C == 1) {
-            cv::Mat src(out_shape[2], out_shape[3], CV_32FC1, out_data.data());
-            cv::resize(src, prob_map, cv::Size(width, height));
-        } else {
-            // take channel 1
-            std::vector<float> ch(out_shape[2] * out_shape[3]);
-            for (int y = 0; y < out_shape[2]; ++y) for (int x = 0; x < out_shape[3]; ++x) {
-                ch[y * out_shape[3] + x] = out_data[(1 * out_shape[2] + y) * out_shape[3] + x];
-            }
-            cv::Mat src(out_shape[2], out_shape[3], CV_32FC1, ch.data());
-            cv::resize(src, prob_map, cv::Size(width, height));
-        }
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                float p = prob_map.at<float>(y, x);
-                out_mask[y * width + x] = (unsigned char)(std::min(std::max(p * 255.f, 0.f), 255.f));
-            }
-        }
+    // Build probability map (float) of size HxW. If output has channels, take channel 1 as foreground prob.
+    cv::Mat prob_map(H, W, CV_32FC1);
+    if (C == 1) {
+        // straight copy
+        memcpy(prob_map.data, out_data.data(), sizeof(float) * H * W);
     } else {
-        if (C == 1) {
-            for (int i = 0; i < H*W; ++i) {
-                float p = out_data[i];
-                out_mask[i] = (unsigned char)(std::min(std::max(p * 255.f, 0.f), 255.f));
-            }
-        } else {
-            // channel 1
-            for (int i = 0; i < H*W; ++i) {
-                float p = out_data[(1 * H + (i / W)) * W + (i % W)];
-                out_mask[i] = (unsigned char)(std::min(std::max(p * 255.f, 0.f), 255.f));
-            }
+        // offset to channel 1
+        size_t channel_size = static_cast<size_t>(H) * static_cast<size_t>(W);
+        const float* ch1 = out_data.data() + channel_size; // channel 1
+        memcpy(prob_map.data, ch1, sizeof(float) * channel_size);
+    }
+
+    // If model output was for padded size, crop back to original width/height region and then resize if necessary.
+    cv::Mat prob_cropped = prob_map(cv::Rect(0, 0, std::min(W, padded_w), std::min(H, padded_h)));
+    // Now resize/crop to the exact original image size
+    cv::Mat prob_resized;
+    if (prob_cropped.cols == width && prob_cropped.rows == height) {
+        prob_resized = prob_cropped;
+    } else {
+        cv::resize(prob_cropped, prob_resized, cv::Size(width, height));
+    }
+
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            float p = prob_resized.at<float>(y, x);
+            out_mask[y * width + x] = (unsigned char)(std::min(std::max(p * 255.f, 0.f), 255.f));
         }
     }
 
